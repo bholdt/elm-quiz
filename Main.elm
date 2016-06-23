@@ -3,9 +3,11 @@ module Main exposing (..)
 import Html exposing (Html, button, div, text)
 import Html.App as App
 import Html.Events exposing (onClick)
+import Json.Decode as Json exposing ((:=))
 import List.Extra
 import Task exposing (..)
 import Maybe
+import Http
 import Process
 
 main =
@@ -15,7 +17,7 @@ main =
         , update = update
         , subscriptions = \_ -> Sub.none
         }
-
+        
 
 type alias Answer = {
     text: String
@@ -44,8 +46,7 @@ initModel = {
    , score = 0
   }
 
-type Msg = QuestionResponse (List Question) | PickQuestion (Maybe Question) | AnswerQuestion Answer
-
+type Msg = QuestionResponse (List Question) | QuestionResponseError Http.Error | PickQuestion (Maybe Question) | AnswerQuestion Answer
 
 createNew: Model -> Model
 createNew model =  
@@ -66,6 +67,8 @@ update msg model =
             ({ model | questions = questions }, pickRandomQuestion questions )
         PickQuestion question -> 
             ({ model | currentQuestion = question }, Cmd.none)
+        QuestionResponseError error ->
+            (model, Cmd.none)
         AnswerQuestion answer ->
             let
                 newModel = createNew model
@@ -83,14 +86,30 @@ pickRandomQuestion questions =
     in
         Task.perform PickQuestion PickQuestion getQuestion
 
+lookupZipCode : Task Http.Error (List Question)
+lookupZipCode =
+    Http.get questions ("http://localhost:3000/questions/")
+
+questions: Json.Decoder (List Question)
+questions =
+  let question =
+        Json.object3 (\a b c -> {id = a, text = b, answers = c, points = 1}) 
+          ("id" := Json.int)
+          ("text" := Json.string)
+         ("answers":= Json.list ((Json.object2 (\a b -> {text = a, correct = b}) ("text" := Json.string) ("correct" := Json.bool))))
+  in
+      Json.list question 
+
 fetchQuestions: Cmd Msg
 fetchQuestions =
-    let
-        questions = [ 
-                { id = 1, text = "Capital of Namibia?", answers = [{text = "WIndhoek", correct = True}], points = 1 }
-            ]
-    in
-        Task.perform QuestionResponse QuestionResponse (Process.sleep 2000 `andThen` (\_ -> Task.fromResult (Ok questions)))
+    Task.perform QuestionResponseError QuestionResponse lookupZipCode
+    -- let
+       -- questions = [ 
+       --           { id = 1, text = "Capital of Namibia?", answers = [{text="Hello", correct = False}, {text = "WIndhoek", correct = True}], points = 1 }
+       --         , { id = 2, text = "Capital of Botswana?", answers = [{ text = "Berlin", correct = False }, {text = "Gabarone", correct = True}], points = 1 }
+       --     ]
+    --in
+     ---   Task.perform QuestionResponse QuestionResponse (Process.sleep 2000 `andThen` (\_ -> Task.fromResult (Ok questions)))
 
 viewAnswer: Answer -> Html Msg
 viewAnswer answer =

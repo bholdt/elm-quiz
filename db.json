@@ -1,0 +1,24 @@
+{ 
+  "questions": [ 
+      { 
+          "id": 1,  
+          "text": "What is the capital of Windhoek?", 
+          "answers": [
+              { "text": "Windhoek", "correct": true},
+              { "text": "Somewhere else", "correct": false},
+              { "text": "Somewhere else", "correct": false},
+              { "text": "Somewhere else", "correct": false}
+          ] 
+      },
+      { 
+          "id": 2,  
+          "text": "What is the capital of Botswana?", 
+          "answers": [
+              { "text": "Gaborone", "correct": true},
+              { "text": "Somewhere else", "correct": false},
+              { "text": "Somewhere else", "correct": false},
+              { "text": "Somewhere else", "correct": false}
+          ] 
+      }
+    ]
+}
